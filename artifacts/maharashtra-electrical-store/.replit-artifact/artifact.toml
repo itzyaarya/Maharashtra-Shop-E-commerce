@@ -1,6 +1,6 @@
 kind = "web"
 previewPath = "/"
-title = "Maharashtra Electrical Store"
+title = "JV Electric Works"
 description = "An online electrical, solar, lighting, and mobile repair storefront for customers and business buyers across Maharashtra, with a secure shop-owner inventory and order dashboard."
 version = "1.0.0"
 id = "artifacts/maharashtra-electrical-store"

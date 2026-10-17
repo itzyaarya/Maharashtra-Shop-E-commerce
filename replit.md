@@ -1,6 +1,6 @@
-# Maharashtra Electrical Store
+# JV Electric Works
 
-Responsive Maharashtra electrical, solar, mobile phone and repair storefront backed by a Hono Worker and Cloudflare D1. Supports retail and approved trade orders, inventory, shipping quotes, repairs and an owner dashboard.
+Responsive JV Electric Works storefront for electrical, solar, mobile phone and repair services, backed by a Hono Worker and Cloudflare D1. Supports retail and approved trade orders, inventory, shipping quotes, repairs and an owner dashboard.
 
 ## Run & operate
 

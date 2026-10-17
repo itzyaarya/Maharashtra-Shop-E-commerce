@@ -72,8 +72,8 @@ function Header({ count }: { count: number }) {
     <header className="sticky top-0 z-40 border-b border-[#d9d2c3] bg-[#fbf9f2]/95 backdrop-blur">
       <div className="mx-auto flex min-h-[74px] max-w-7xl items-center justify-between gap-4 px-4">
         <Link href="/" className="flex items-center gap-3 no-underline" data-testid="link-home">
-          <span className="flex h-10 w-10 items-center justify-center rounded-sm bg-[#e97917] text-white"><Bolt size={22} strokeWidth={2.8} /></span>
-          <span className="leading-tight"><span className="display block text-[21px] font-extrabold uppercase text-[#202631]">Maharashtra</span><span className="mono block text-[9px] uppercase tracking-[.16em] text-[#577174]">Electrical Store</span></span>
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-sm border border-[#d9d2c3] bg-white"><img src={`${import.meta.env.BASE_URL}jv-electric-works-logo.png`} alt="" className="h-full w-full object-contain" /></span>
+          <span className="leading-tight"><span className="display block text-[20px] font-extrabold uppercase text-[#202631]">JV Electric</span><span className="mono mt-1 block text-[9px] uppercase tracking-[.16em] text-[#577174]">Works</span></span>
         </Link>
         <nav className="hidden items-center gap-7 md:flex" aria-label="Main navigation">
           <Link className={`navlink ${admin ? '' : 'is-active'}`} href="/" data-testid="link-catalog">Shop</Link>
@@ -100,7 +100,7 @@ function Footer() {
       <div><div className="display text-3xl font-extrabold uppercase">Good parts.<br/>Straight answers.</div><p className="mt-3 max-w-sm text-sm leading-6 text-white/65">A local electrical counter and mobile repair bench, serving customers across Maharashtra.</p></div>
       <div><div className="mono text-[10px] uppercase tracking-[.18em] text-[#e97917]">Find your way</div><div className="mt-4 grid gap-3 text-sm text-white/75"><Link href="/" data-testid="footer-shop">Browse stock</Link><Link href="/repair" data-testid="footer-repair">Book a repair</Link><Link href="/business" data-testid="footer-wholesale">Wholesale account</Link></div></div>
       <div><div className="mono text-[10px] uppercase tracking-[.18em] text-[#e97917]">At the counter</div><div className="mt-4 space-y-2 text-sm text-white/75"><p>Serving Pune, Marathwada and Maharashtra.</p><p>Pickup details are confirmed by the shop.</p><p>Orders are confirmed before payment.</p></div></div>
-    </div><div className="border-t border-white/10 px-4 py-4 text-center text-[11px] text-white/45">Maharashtra Electrical Store · Electrical, solar and mobile repair</div>
+    </div><div className="border-t border-white/10 px-4 py-4 text-center text-[11px] text-white/45">JV Electric Works · Electrical, solar and mobile repair</div>
   </footer>;
 }
 
@@ -414,7 +414,7 @@ function AdminPage() {
   };
   const tabs = [{ id: 'overview', label: 'Overview' }, { id: 'orders', label: 'Orders' }, { id: 'inventory', label: 'Inventory' }, { id: 'repairs', label: 'Repairs' }, { id: 'business', label: 'Wholesale applications' }, { id: 'sales', label: 'Sales' }, { id: 'alerts', label: `Alerts${notifications.data?.unreadCount ? ` · ${notifications.data.unreadCount}` : ''}` }] as const;
   return <main className="min-h-[72vh] bg-[#f3efe5]">
-    <div className="border-b border-[#d9d2c3] bg-[#202631] text-[#f5f0e4]"><div className="mx-auto flex max-w-7xl flex-col justify-between gap-3 px-4 py-7 sm:flex-row sm:items-center"><div><div className="mono text-[10px] uppercase tracking-[.18em] text-[#e97917]">MAHARASHTRA ELECTRICAL / OWNER DESK</div><h1 className="display mt-1 text-4xl font-bold uppercase">The counter, in view.</h1></div><div className="flex items-center gap-2 text-xs text-white/65"><span className="h-2 w-2 rounded-full bg-[#e97917]"/> PRIVATE SHOP OPERATIONS</div></div></div>
+    <div className="border-b border-[#d9d2c3] bg-[#202631] text-[#f5f0e4]"><div className="mx-auto flex max-w-7xl flex-col justify-between gap-3 px-4 py-7 sm:flex-row sm:items-center"><div><div className="mono text-[10px] uppercase tracking-[.18em] text-[#e97917]">JV ELECTRIC WORKS / OWNER DESK</div><h1 className="display mt-1 text-4xl font-bold uppercase">The counter, in view.</h1></div><div className="flex items-center gap-2 text-xs text-white/65"><span className="h-2 w-2 rounded-full bg-[#e97917]"/> PRIVATE SHOP OPERATIONS</div></div></div>
     <div className="mx-auto max-w-7xl px-4 py-6">
       <div className="mb-6 flex gap-1 overflow-x-auto border-b border-[#d9d2c3]" role="tablist">{tabs.map(item => <button key={item.id} onClick={() => setTab(item.id)} className={`admin-tab ${tab === item.id ? 'admin-tab-active' : ''}`} role="tab" aria-selected={tab === item.id} data-testid={`tab-admin-${item.id}`}>{item.label}</button>)}</div>
       {protectedFailure ? <ProtectedAdmin retry={refreshAdmin}/> :
