@@ -1,45 +1,31 @@
-# [Project name]
+# Maharashtra Electrical Store
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+Responsive Maharashtra electrical, solar, mobile phone and repair storefront backed by a Hono Worker and Cloudflare D1. Supports retail and approved trade orders, inventory, shipping quotes, repairs and an owner dashboard.
 
-## Run & Operate
+## Run & operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- Storefront preview: workflow `artifacts/maharashtra-electrical-store: web`
+- Local API + D1: workflow `artifacts/api-server: API Server`
+- `pnpm run typecheck` — workspace typecheck
+- `pnpm --filter @workspace/api-spec run codegen` — regenerate client hooks and request validators from OpenAPI
+- Cloudflare setup and deployment: `artifacts/api-server/README.md`
 
-## Stack
+## Stack and source of truth
 
-- pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- Storefront: React, Vite, Tailwind CSS, lightweight query hooks in `artifacts/maharashtra-electrical-store`
+- API: Cloudflare Workers, Hono, Cloudflare Access JWT validation in `artifacts/api-server/src`
+- Database: Cloudflare D1; migration and demo seed data in `artifacts/api-server/migrations`
+- API contract: `lib/api-spec/openapi.yaml`; generated clients and Zod validators live in `lib/api-client-react` and `lib/api-zod`
+- Cloudflare configuration: `artifacts/api-server/wrangler.toml`
 
-## Where things live
+## Operating notes
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
-
-## Architecture decisions
-
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- The database migration seeds demonstration products, stock, shipping zones, and prices. Replace and verify those values, pincode coverage, and GST rates before accepting live orders.
+- Checkout supports COD, cash at shop pickup, and manual UPI confirmation. No payment gateway is wired in.
+- Admin routes fail closed until Cloudflare Access is configured. Protect the production hostname with an owner-only Access policy.
+- Owner dashboard notices are immediate. An optional `OWNER_WEBHOOK_URL` creates a retried webhook outbox.
+- Trade approval currently uses the approved customer's phone number at checkout; add phone verification or a trade access-code flow before relying on wholesale discounts for sensitive pricing.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
-
-## User preferences
-
-_Populate as you build — explicit user instructions worth remembering across sessions._
-
-## Gotchas
-
-_Populate as you build — sharp edges, "always run X before Y" rules._
-
-## Pointers
-
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+Customers can browse products, choose variants, quote regional shipping, submit an order, request a mobile repair, and apply for a trade account. Owners can process orders, reconcile payments, receive stock batches, adjust inventory, review repairs and trade applications, and inspect sales and low-stock alerts.

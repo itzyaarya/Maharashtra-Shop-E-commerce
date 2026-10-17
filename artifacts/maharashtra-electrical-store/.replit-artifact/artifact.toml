@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Maharashtra Electrical Store"
+description = "An online electrical, solar, lighting, and mobile repair storefront for customers and business buyers across Maharashtra, with a secure shop-owner inventory and order dashboard."
+version = "1.0.0"
+id = "artifacts/maharashtra-electrical-store"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23890
+
+[services.development]
+run = "pnpm --filter @workspace/maharashtra-electrical-store run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/maharashtra-electrical-store", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/maharashtra-electrical-store/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23890"
+BASE_PATH = "/"

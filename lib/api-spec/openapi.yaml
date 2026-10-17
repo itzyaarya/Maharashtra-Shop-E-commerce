@@ -1,36 +1,741 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
+  # Do not change the title; it controls generated import paths.
   title: Api
-  version: 0.1.0
-  description: API specification
+  version: 0.2.0
+  description: Maharashtra electrical, solar, mobile repair, and inventory API.
 servers:
   - url: /api
-    description: Base API path
+    description: API service
 tags:
   - name: health
-    description: Health operations
+  - name: store
+  - name: checkout
+  - name: repairs
+  - name: business
+  - name: admin
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
-          description: Healthy
+          description: Worker is healthy
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /v1/categories:
+    get:
+      operationId: listCategories
+      tags: [store]
+      summary: List active product categories
+      responses:
+        "200":
+          description: Categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Category"
+  /v1/products:
+    get:
+      operationId: listProducts
+      tags: [store]
+      summary: Search and browse active products
+      parameters:
+        - in: query
+          name: search
+          schema: { type: string, maxLength: 80 }
+        - in: query
+          name: category
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: pageSize
+          schema: { type: integer, minimum: 1, maximum: 50, default: 12 }
+      responses:
+        "200":
+          description: Product page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductPage"
+  /v1/checkout/quote:
+    post:
+      operationId: quoteCheckout
+      tags: [checkout]
+      summary: Validate cart, delivery region, stock, and current price
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckoutInput"
+      responses:
+        "200":
+          description: Validated checkout quote
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutQuote"
+        "400":
+          description: Invalid cart or delivery selection
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/orders:
+    post:
+      operationId: createOrder
+      tags: [checkout]
+      summary: Place an order and reserve stock
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: { type: string, minLength: 8, maxLength: 100 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckoutInput"
+      responses:
+        "201":
+          description: Order placed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderReceipt"
+        "400":
+          description: Invalid order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Stock or idempotency conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/repair-requests:
+    post:
+      operationId: createRepairRequest
+      tags: [repairs]
+      summary: Submit a mobile repair request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RepairRequestInput"
+      responses:
+        "201":
+          description: Repair request created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RepairRequestReceipt"
+  /v1/business-applications:
+    post:
+      operationId: createBusinessApplication
+      tags: [business]
+      summary: Request wholesale account approval
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BusinessApplicationInput"
+      responses:
+        "201":
+          description: Application received
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusinessApplicationReceipt"
+  /v1/admin/overview:
+    get:
+      operationId: getAdminOverview
+      tags: [admin]
+      summary: Sales, order, low-stock, and recent-activity summary
+      responses:
+        "200":
+          description: Dashboard overview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminOverview"
+        "401":
+          description: Cloudflare Access identity required
+  /v1/admin/orders:
+    get:
+      operationId: listAdminOrders
+      tags: [admin]
+      summary: List recent orders
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [pending, processing, dispatched, delivered, completed, cancelled]
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+      responses:
+        "200":
+          description: Orders
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminOrderPage"
+        "401":
+          description: Cloudflare Access identity required
+  /v1/admin/orders/{orderNumber}/status:
+    patch:
+      operationId: updateOrderStatus
+      tags: [admin]
+      summary: Advance or cancel an order
+      parameters:
+        - in: path
+          name: orderNumber
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderStatusUpdate"
+      responses:
+        "200":
+          description: Updated order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminOrder"
+  /v1/admin/inventory:
+    get:
+      operationId: listAdminInventory
+      tags: [admin]
+      summary: List stock, batches, and low-stock items
+      parameters:
+        - in: query
+          name: search
+          schema: { type: string, maxLength: 80 }
+        - in: query
+          name: lowStockOnly
+          schema: { type: boolean, default: false }
+      responses:
+        "200":
+          description: Inventory rows
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InventoryItem"
+        "401":
+          description: Cloudflare Access identity required
+  /v1/admin/inventory/{variantId}/adjustments:
+    post:
+      operationId: createInventoryAdjustment
+      tags: [admin]
+      summary: Record a stock adjustment with an audit note
+      parameters:
+        - in: path
+          name: variantId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InventoryAdjustmentInput"
+      responses:
+        "201":
+          description: Updated inventory item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryItem"
+  /v1/admin/inventory/{variantId}/receipts:
+    post:
+      operationId: createInventoryReceipt
+      tags: [admin]
+      summary: Receive a named stock batch
+      parameters:
+        - in: path
+          name: variantId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InventoryReceiptInput"
+      responses:
+        "201":
+          description: Received batch and updated inventory
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryItem"
+  /v1/admin/repairs:
+    get:
+      operationId: listAdminRepairs
+      tags: [admin]
+      summary: List repair requests
+      responses:
+        "200":
+          description: Repair requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminRepairRequest"
+        "401":
+          description: Cloudflare Access identity required
+  /v1/admin/repairs/{id}/status:
+    patch:
+      operationId: updateRepairStatus
+      tags: [admin]
+      summary: Update repair request status
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RepairStatusUpdate"
+      responses:
+        "200":
+          description: Updated repair request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminRepairRequest"
+  /v1/admin/sales:
+    get:
+      operationId: getAdminSales
+      tags: [admin]
+      summary: Get daily and monthly sales and best sellers
+      responses:
+        "200":
+          description: Sales analytics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SalesSummary"
+        "401":
+          description: Cloudflare Access identity required
+  /v1/admin/notifications:
+    get:
+      operationId: listAdminNotifications
+      tags: [admin]
+      summary: List shop-owner alerts
+      responses:
+        "200":
+          description: Notifications and unread count
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationPage"
+        "401":
+          description: Cloudflare Access identity required
+  /v1/admin/notifications/{id}/read:
+    patch:
+      operationId: markAdminNotificationRead
+      tags: [admin]
+      summary: Mark an owner alert as read
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Notification marked read
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Success"
+  /v1/admin/orders/{orderNumber}/payment-status:
+    patch:
+      operationId: updateOrderPaymentStatus
+      tags: [admin]
+      summary: Record manual payment reconciliation
+      parameters:
+        - in: path
+          name: orderNumber
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentStatusUpdate"
+      responses:
+        "200":
+          description: Updated order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminOrder"
+  /v1/admin/business-applications:
+    get:
+      operationId: listBusinessApplications
+      tags: [admin]
+      summary: List pending wholesale account applications
+      responses:
+        "200":
+          description: Business applications
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/BusinessApplication" }
+        "401":
+          description: Cloudflare Access identity required
+  /v1/admin/business-applications/{id}/status:
+    patch:
+      operationId: updateBusinessApplicationStatus
+      tags: [admin]
+      summary: Approve or reject a business account
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BusinessStatusUpdate"
+      responses:
+        "200":
+          description: Updated application
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusinessApplication"
 components:
   schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string }
+    Success:
+      type: object
+      required: [success]
+      properties:
+        success: { type: boolean }
     HealthStatus:
       type: object
+      required: [status]
       properties:
-        status:
+        status: { type: string }
+    Category:
+      type: object
+      required: [id, name, slug]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        slug: { type: string }
+        productCount: { type: integer }
+    ProductVariant:
+      type: object
+      required: [id, sku, label, retailPricePaise, availableQty]
+      properties:
+        id: { type: string }
+        sku: { type: string }
+        label: { type: string }
+        attributes: { type: object, additionalProperties: true }
+        retailPricePaise: { type: integer }
+        wholesalePricePaise: { type: ["integer", "null"] }
+        wholesaleMinQty: { type: integer }
+        availableQty: { type: integer }
+    Product:
+      type: object
+      required: [id, slug, name, description, category, shippingClass, images, variants]
+      properties:
+        id: { type: string }
+        slug: { type: string }
+        name: { type: string }
+        description: { type: string }
+        brand: { type: ["string", "null"] }
+        category: { type: string }
+        shippingClass:
           type: string
-      required:
-        - status
-
+          enum: [maharashtra_cables, standard_local, fragile_zone, pickup_only]
+        images:
+          type: array
+          items: { type: string }
+        variants:
+          type: array
+          items: { $ref: "#/components/schemas/ProductVariant" }
+    ProductPage:
+      type: object
+      required: [items, total, page, pageSize]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/Product" }
+        total: { type: integer }
+        page: { type: integer }
+        pageSize: { type: integer }
+    CheckoutLineInput:
+      type: object
+      required: [variantId, quantity]
+      properties:
+        variantId: { type: string }
+        quantity: { type: integer, minimum: 1, maximum: 1000 }
+    CheckoutInput:
+      type: object
+      required: [buyerName, buyerPhone, orderType, fulfillmentType, paymentMethod, items]
+      properties:
+        buyerName: { type: string, minLength: 2, maxLength: 120 }
+        buyerPhone: { type: string, minLength: 10, maxLength: 16 }
+        buyerEmail: { type: ["string", "null"], format: email }
+        orderType: { type: string, enum: [retail, wholesale] }
+        fulfillmentType: { type: string, enum: [ship, pickup] }
+        paymentMethod: { type: string, enum: [cod, manual_upi, cash_pickup] }
+        businessName: { type: ["string", "null"] }
+        gstin: { type: ["string", "null"] }
+        addressLine1: { type: ["string", "null"] }
+        addressLine2: { type: ["string", "null"] }
+        city: { type: ["string", "null"] }
+        district: { type: ["string", "null"] }
+        stateCode: { type: ["string", "null"] }
+        pincode: { type: ["string", "null"], pattern: "^[0-9]{6}$" }
+        customerNote: { type: ["string", "null"], maxLength: 500 }
+        items:
+          type: array
+          minItems: 1
+          maxItems: 50
+          items: { $ref: "#/components/schemas/CheckoutLineInput" }
+    QuoteLine:
+      type: object
+      required: [variantId, name, quantity, unitPricePaise, lineTotalPaise]
+      properties:
+        variantId: { type: string }
+        name: { type: string }
+        quantity: { type: integer }
+        unitPricePaise: { type: integer }
+        lineTotalPaise: { type: integer }
+    CheckoutQuote:
+      type: object
+      required: [items, subtotalPaise, shippingPaise, taxPaise, totalPaise, currency]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/QuoteLine" }
+        subtotalPaise: { type: integer }
+        shippingPaise: { type: integer }
+        taxPaise: { type: integer }
+        totalPaise: { type: integer }
+        currency: { type: string, const: INR }
+    OrderReceipt:
+      type: object
+      required: [orderNumber, status, totalPaise, currency]
+      properties:
+        orderNumber: { type: string }
+        status: { type: string }
+        totalPaise: { type: integer }
+        currency: { type: string, const: INR }
+    RepairRequestInput:
+      type: object
+      required: [customerName, phone, deviceType, serviceType, issueDescription]
+      properties:
+        customerName: { type: string, minLength: 2, maxLength: 120 }
+        phone: { type: string, minLength: 10, maxLength: 16 }
+        email: { type: ["string", "null"], format: email }
+        deviceType: { type: string, maxLength: 80 }
+        brand: { type: ["string", "null"], maxLength: 80 }
+        model: { type: ["string", "null"], maxLength: 120 }
+        serviceType: { type: string, enum: [hardware, software, other] }
+        issueDescription: { type: string, minLength: 8, maxLength: 2000 }
+        preferredDate: { type: ["string", "null"], format: date }
+    RepairRequestReceipt:
+      type: object
+      required: [requestNumber, status]
+      properties:
+        requestNumber: { type: string }
+        status: { type: string }
+    BusinessApplicationInput:
+      type: object
+      required: [contactName, phone, businessName]
+      properties:
+        contactName: { type: string, minLength: 2, maxLength: 120 }
+        phone: { type: string, minLength: 10, maxLength: 16 }
+        email: { type: ["string", "null"], format: email }
+        businessName: { type: string, minLength: 2, maxLength: 160 }
+        gstin: { type: ["string", "null"], maxLength: 15 }
+        note: { type: ["string", "null"], maxLength: 500 }
+    BusinessApplicationReceipt:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string }
+    AdminOverview:
+      type: object
+      required: [todayRevenuePaise, monthRevenuePaise, pendingOrders, lowStockCount, recentOrders]
+      properties:
+        todayRevenuePaise: { type: integer }
+        monthRevenuePaise: { type: integer }
+        pendingOrders: { type: integer }
+        lowStockCount: { type: integer }
+        recentOrders:
+          type: array
+          items: { $ref: "#/components/schemas/AdminOrder" }
+    AdminOrder:
+      type: object
+      required: [orderNumber, buyerName, buyerPhone, orderType, status, paymentStatus, totalPaise, createdAt, itemCount]
+      properties:
+        orderNumber: { type: string }
+        buyerName: { type: string }
+        buyerPhone: { type: string }
+        orderType: { type: string }
+        status: { type: string }
+        paymentStatus: { type: string }
+        totalPaise: { type: integer }
+        createdAt: { type: string }
+        itemCount: { type: integer }
+    AdminOrderPage:
+      type: object
+      required: [items, total, page]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/AdminOrder" }
+        total: { type: integer }
+        page: { type: integer }
+    OrderStatusUpdate:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [pending, processing, dispatched, delivered, completed, cancelled] }
+    InventoryItem:
+      type: object
+      required: [variantId, sku, productName, variantLabel, onHandQty, reservedQty, availableQty, lowStockThreshold, batches]
+      properties:
+        variantId: { type: string }
+        sku: { type: string }
+        productName: { type: string }
+        variantLabel: { type: string }
+        onHandQty: { type: integer }
+        reservedQty: { type: integer }
+        availableQty: { type: integer }
+        lowStockThreshold: { type: integer }
+        batches: { type: integer }
+    InventoryAdjustmentInput:
+      type: object
+      required: [quantityDelta, note]
+      properties:
+        quantityDelta: { type: integer, minimum: -10000, maximum: 10000, not: { const: 0 } }
+        note: { type: string, minLength: 3, maxLength: 300 }
+    InventoryReceiptInput:
+      type: object
+      required: [batchCode, quantity]
+      properties:
+        batchCode: { type: string, minLength: 1, maxLength: 80 }
+        quantity: { type: integer, minimum: 1, maximum: 100000 }
+        unitCostPaise: { type: ["integer", "null"], minimum: 0 }
+        note: { type: ["string", "null"], maxLength: 300 }
+    AdminRepairRequest:
+      type: object
+      required: [id, requestNumber, customerName, phone, deviceType, serviceType, issueDescription, status, createdAt]
+      properties:
+        id: { type: string }
+        requestNumber: { type: string }
+        customerName: { type: string }
+        phone: { type: string }
+        email: { type: ["string", "null"] }
+        deviceType: { type: string }
+        brand: { type: ["string", "null"] }
+        model: { type: ["string", "null"] }
+        serviceType: { type: string }
+        issueDescription: { type: string }
+        status: { type: string }
+        createdAt: { type: string }
+    RepairStatusUpdate:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [pending, accepted, in_progress, ready, completed, cancelled] }
+    SalesSummary:
+      type: object
+      required: [todayRevenuePaise, monthRevenuePaise, todayOrders, monthOrders, bestSellers]
+      properties:
+        todayRevenuePaise: { type: integer }
+        monthRevenuePaise: { type: integer }
+        todayOrders: { type: integer }
+        monthOrders: { type: integer }
+        bestSellers:
+          type: array
+          items: { $ref: "#/components/schemas/BestSeller" }
+    BestSeller:
+      type: object
+      required: [productName, quantitySold, revenuePaise]
+      properties:
+        productName: { type: string }
+        quantitySold: { type: integer }
+        revenuePaise: { type: integer }
+    OwnerNotification:
+      type: object
+      required: [id, eventType, entityType, entityId, payload, createdAt, read]
+      properties:
+        id: { type: string }
+        eventType: { type: string }
+        entityType: { type: string }
+        entityId: { type: string }
+        payload: { type: object, additionalProperties: true }
+        createdAt: { type: string }
+        read: { type: boolean }
+    NotificationPage:
+      type: object
+      required: [items, unreadCount]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/OwnerNotification" }
+        unreadCount: { type: integer }
+    PaymentStatusUpdate:
+      type: object
+      required: [paymentStatus]
+      properties:
+        paymentStatus: { type: string, enum: [paid, cod_due] }
+    BusinessApplication:
+      type: object
+      required: [id, name, phone, companyName, businessStatus, createdAt]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        phone: { type: string }
+        email: { type: ["string", "null"] }
+        companyName: { type: string }
+        gstin: { type: ["string", "null"] }
+        businessStatus: { type: string }
+        createdAt: { type: string }
+    BusinessStatusUpdate:
+      type: object
+      required: [businessStatus]
+      properties:
+        businessStatus: { type: string, enum: [approved, rejected] }
